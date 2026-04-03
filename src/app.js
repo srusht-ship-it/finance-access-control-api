@@ -27,3 +27,7 @@ app.use("/api/users", userRoutes);
 const recordRoutes = require("./routes/recordRoutes");
 
 app.use("/api/records", recordRoutes);
+
+const summaryRoutes = require("./routes/summaryRoutes");
+
+app.use("/api/summary", summaryRoutes);
