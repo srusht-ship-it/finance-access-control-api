@@ -1,17 +1,36 @@
 const prisma = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const AppError = require("../utils/AppError");
 
 // REGISTER
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
     // Validation
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email, and password are required",
+      });
     }
+
+    if (!email.includes("@")) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    // Default role
+    const assignedRole = role || "VIEWER";
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -19,69 +38,63 @@ exports.register = async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
     }
-    
-    if(!user){
-      throw new AppError("User not found", 404);
-    }
-    
-    if (!email.includes("@")) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid email format",
-  });
-}
 
-if (password.length < 6) {
-  return res.status(400).json({
-    success: false,
-    message: "Password must be at least 6 characters",
-  });
-}
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const user = await prisma.user.create({
-  data: {
-    name,
-    email,
-    password: hashedPassword,
-    role,
-  },
-});
-
-// remove password
-const { password: _, ...safeUser } = user;
-
-res.status(201).json({
-  success: true,
-  message: "User registered successfully",
-  data: safeUser,
-});
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: assignedRole,
+      },
+    });
 
     // Remove password from response
-    delete user.password;
+    const { password: _, ...safeUser } = user;
 
     res.status(201).json({
-      success:true,
+      success: true,
       message: "User registered successfully",
-      user,
+      data: safeUser,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 // LOGIN
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     // Validation
     if (!email || !password) {
-      return res.status(400).json({ message: "Email & password required" });
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    if (!email.includes("@")) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
     }
 
     // Find user
@@ -90,29 +103,30 @@ exports.login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
-// Check if user is inactive
-if (!user.status) {
-  return res.status(403).json({ message: "User is inactive. Contact admin." });
-}
-   if (!email.includes("@")) {
-  return res.status(400).json({ success: false, message: "Invalid email format" });
-}
+    // Check if user is inactive
+    if (!user.status) {
+      return res.status(403).json({
+        success: false,
+        message: "User is inactive. Contact admin.",
+      });
+    }
 
-if (password.length < 6) {
-  return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
-}
-    // Compare password
+    //Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
-
-    
     // Generate JWT
     const token = jwt.sign(
       {
@@ -123,12 +137,12 @@ if (password.length < 6) {
       { expiresIn: "1d" }
     );
 
-    res.json({
-      success:true,
+    res.status(200).json({
+      success: true,
       message: "Login successful",
-      data:{token},
+      data: { token },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
