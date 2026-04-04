@@ -4,6 +4,11 @@ require("dotenv").config();
 
 const app = express();
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests, try later",
+});
 app.use(cors());
 app.use(express.json());
 app.use(limiter);
@@ -46,10 +51,3 @@ app.use(errorHandler);
 
 const rateLimit = require("express-rate-limit");
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 mins
-  max: 100, // limit each IP
-  message: "Too many requests, try later",
-});
-
-app.use(limiter);
