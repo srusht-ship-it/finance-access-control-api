@@ -1,4 +1,5 @@
 const prisma = require("../config/db");
+const AppError = require("../utils/AppError");
 
 // 🔹 Create Record (ADMIN)
 exports.createRecord = async (req, res) => {
@@ -8,7 +9,19 @@ exports.createRecord = async (req, res) => {
     if (!amount || !type || !category || !date) {
       return res.status(400).json({ message: "Required fields missing" });
     }
+    
+    if (amount <= 0) {
+   throw new AppError("Amount must be greater than 0", 400);
+}
 
+if (!["INCOME", "EXPENSE"].includes(type)) {
+  return res.status(400).json({ success: false, message: "Invalid type" });
+}
+
+if (isNaN(Date.parse(date))) {
+  return res.status(400).json({ success: false, message: "Invalid date format" });
+}
+    
     const record = await prisma.record.create({
       data: {
         amount,
@@ -20,16 +33,49 @@ exports.createRecord = async (req, res) => {
       },
     });
 
-    res.status(201).json(record);
+   res.status(201).json({
+  success: true,
+  message: "Record created",
+  data: record,
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+      error: error.message });
   }
 };
 
 // 🔹 Get Records (ANALYST + ADMIN)
-exports.getRecords = async (req, res) => {
+// 🔹 Get Records with Pagination (ANALYST + ADMIN)
+exports.getRecords = async (req, res, next) => {
   try {
-    const { type, category } = req.query;
+    const { type, category, page = 1, limit = 5 } = req.query;
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+
+    // 🔥 ADD VALIDATION HERE
+    if (isNaN(pageNumber) || isNaN(pageSize)) {
+      return res.status(400).json({
+        success: false,
+        message: "Page and limit must be numbers",
+      });
+    }
+
+    if (pageNumber < 1 || pageSize < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Page and limit must be greater than 0",
+      });
+    }
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const totalRecords = await prisma.record.count({
+      where: {
+        ...(type && { type }),
+        ...(category && { category }),
+      },
+    });
 
     const records = await prisma.record.findMany({
       where: {
@@ -37,11 +83,22 @@ exports.getRecords = async (req, res) => {
         ...(category && { category }),
       },
       orderBy: { date: "desc" },
+      skip: skip,
+      take: pageSize,
     });
 
-    res.json(records);
+    res.status(200).json({
+      success: true,
+      data: records,
+      pagination: {
+        total: totalRecords,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages: Math.ceil(totalRecords / pageSize),
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
@@ -56,9 +113,14 @@ exports.updateRecord = async (req, res) => {
       data,
     });
 
-    res.json(updated);
+   res.status(200).json({
+  success: true,
+  message: "Record updated",
+  data: updated,
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+      error: error.message });
   }
 };
 
@@ -71,8 +133,12 @@ exports.deleteRecord = async (req, res) => {
       where: { id: parseInt(id) },
     });
 
-    res.json({ message: "Record deleted" });
+    res.status(200).json({
+  success: true,
+  message: "Record deleted",
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+      error: error.message });
   }
 };

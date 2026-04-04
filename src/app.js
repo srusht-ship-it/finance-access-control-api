@@ -31,3 +31,14 @@ app.use("/api/records", recordRoutes);
 const summaryRoutes = require("./routes/summaryRoutes");
 
 app.use("/api/summary", summaryRoutes);
+
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+const errorHandler = require("./middleware/errorMiddleware");
+
+app.use(errorHandler);

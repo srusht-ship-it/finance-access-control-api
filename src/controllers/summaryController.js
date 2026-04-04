@@ -8,9 +8,13 @@ exports.getTotalIncome = async (req, res) => {
       where: { type: "INCOME" },
     });
 
-    res.json({ totalIncome: result._sum.amount || 0 });
+    res.status(200).json({
+  success: true,
+  data: { totalIncome: result._sum.amount || 0 },
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+        error: error.message });
   }
 };
 
@@ -22,9 +26,13 @@ exports.getTotalExpense = async (req, res) => {
       where: { type: "EXPENSE" },
     });
 
-    res.json({ totalExpense: result._sum.amount || 0 });
+    res.status(200).json({
+  success: true,
+  data: { totalExpense: result._sum.amount || 0 },
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+        error: error.message });
   }
 };
 
@@ -43,9 +51,13 @@ exports.getNetBalance = async (req, res) => {
 
     const net = (income._sum.amount || 0) - (expense._sum.amount || 0);
 
-    res.json({ netBalance: net });
+   res.status(200).json({
+  success: true,
+  data: { netBalance: net },
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+        error: error.message });
   }
 };
 
@@ -57,9 +69,13 @@ exports.getCategoryWise = async (req, res) => {
       _sum: { amount: true },
     });
 
-    res.json(data);
+   res.status(200).json({
+  success: true,
+  data,
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+        error: error.message });
   }
 };
 
@@ -90,8 +106,40 @@ exports.getMonthlyTrends = async (req, res) => {
       }
     });
 
-    res.json(trends);
+    res.status(200).json({
+  success: true,
+  data: trends,
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+        error: error.message });
+  }
+};
+
+// 🔹 Recent Activity (last 5 records)
+exports.getRecentActivity = async (req, res) => {
+  try {
+    const records = await prisma.record.findMany({
+      take: 5,
+      orderBy: { date: "desc" },
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        category: true,
+        date: true,
+        notes: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: records,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

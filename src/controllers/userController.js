@@ -1,7 +1,9 @@
 const prisma = require("../config/db");
+const AppError = require("../utils/AppError");
 
 // 🔹 Get All Users (ADMIN only)
-exports.getAllUsers = async (req, res) => {
+// 🔹 Get All Users (ADMIN only)
+exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -14,14 +16,18 @@ exports.getAllUsers = async (req, res) => {
       },
     });
 
-    res.json(users);
+    res.status(200).json({
+      success: true,
+      data: users,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
 // 🔹 Get Single User
-exports.getUserById = async (req, res) => {
+// 🔹 Get Single User
+exports.getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -33,21 +39,29 @@ exports.getUserById = async (req, res) => {
         email: true,
         role: true,
         status: true,
+        createdAt: true,
       },
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    res.json(user);
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
+
 // 🔹 Update User Role (ADMIN only)
-exports.updateUserRole = async (req, res) => {
+exports.updateUserRole = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
@@ -55,17 +69,32 @@ exports.updateUserRole = async (req, res) => {
     const allowedRoles = ["ADMIN", "ANALYST", "VIEWER"];
 
     if (!allowedRoles.includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role",
+      });
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: { role },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
-    res.json({ message: "Role updated", user: updatedUser });
+    res.status(200).json({
+      success: true,
+      message: "Role updated successfully",
+      data: updatedUser,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error);
   }
 };
 
@@ -79,7 +108,7 @@ exports.toggleUserStatus = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("Invalid credentials", 400);
     }
 
     const updatedUser = await prisma.user.update({
@@ -87,11 +116,13 @@ exports.toggleUserStatus = async (req, res) => {
       data: { status: !user.status },
     });
 
-    res.json({
-      message: `User ${updatedUser.status ? "activated" : "deactivated"}`,
-      user: updatedUser,
-    });
+    res.status(200).json({
+  success: true,
+  message: `User ${updatedUser.status ? "activated" : "deactivated"}`,
+  data: updatedUser,
+});
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success:false,
+      error: error.message });
   }
 };

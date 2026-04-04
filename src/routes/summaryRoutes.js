@@ -10,5 +10,6 @@ router.get("/expense", authMiddleware, summaryController.getTotalExpense);
 router.get("/balance", authMiddleware, summaryController.getNetBalance);
 router.get("/category", authMiddleware, summaryController.getCategoryWise);
 router.get("/trends", authMiddleware, summaryController.getMonthlyTrends);
+router.get("/recent", authMiddleware, summaryController.getRecentActivity);
 
 module.exports = router;
