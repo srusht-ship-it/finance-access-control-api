@@ -42,3 +42,13 @@ app.use((req, res, next) => {
 const errorHandler = require("./middleware/errorMiddleware");
 
 app.use(errorHandler);
+
+const rateLimit = require("express-rate-limit");
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 100, // limit each IP
+  message: "Too many requests, try later",
+});
+
+app.use(limiter);

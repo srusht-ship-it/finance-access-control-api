@@ -1,7 +1,7 @@
 const prisma = require("../config/db");
 const AppError = require("../utils/AppError");
 
-// 🔹 Create Record (ADMIN)
+// 🔹 Create Record 
 exports.createRecord = async (req, res) => {
   try {
     const { amount, type, category, date, notes } = req.body;
@@ -44,16 +44,28 @@ if (isNaN(Date.parse(date))) {
   }
 };
 
-// 🔹 Get Records (ANALYST + ADMIN)
+
 // 🔹 Get Records with Pagination (ANALYST + ADMIN)
 exports.getRecords = async (req, res, next) => {
   try {
-    const { type, category, page = 1, limit = 5 } = req.query;
+    const {
+      type,
+      category,
+      minAmount,
+      maxAmount,
+      startDate,
+      endDate,
+      search,
+      sortBy = "date",
+      order = "desc",
+      page = 1,
+      limit = 5,
+    } = req.query;
 
     const pageNumber = parseInt(page);
     const pageSize = parseInt(limit);
 
-    // 🔥 ADD VALIDATION HERE
+    
     if (isNaN(pageNumber) || isNaN(pageSize)) {
       return res.status(400).json({
         success: false,
@@ -64,26 +76,50 @@ exports.getRecords = async (req, res, next) => {
     if (pageNumber < 1 || pageSize < 1) {
       return res.status(400).json({
         success: false,
-        message: "Page and limit must be greater than 0",
+        message: "Invalid pagination values",
       });
     }
+
+    
+    const filters = {
+      isDeleted:false,
+      ...(type && { type }),
+      ...(category && { category }),
+      ...(minAmount && { amount: { gte: parseFloat(minAmount) } }),
+      ...(maxAmount && {
+        amount: {
+          ...(minAmount && { gte: parseFloat(minAmount) }),
+          lte: parseFloat(maxAmount),
+        },
+      }),
+      ...(startDate || endDate
+        ? {
+            date: {
+              ...(startDate && { gte: new Date(startDate) }),
+              ...(endDate && { lte: new Date(endDate) }),
+            },
+          }
+        : {}),
+      ...(search && {
+        OR: [
+          { category: { contains: search, mode: "insensitive" } },
+          { notes: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+    };
 
     const skip = (pageNumber - 1) * pageSize;
 
     const totalRecords = await prisma.record.count({
-      where: {
-        ...(type && { type }),
-        ...(category && { category }),
-      },
+      where: filters,
     });
 
     const records = await prisma.record.findMany({
-      where: {
-        ...(type && { type }),
-        ...(category && { category }),
+      where: filters,
+      orderBy: {
+        [sortBy]: order,
       },
-      orderBy: { date: "desc" },
-      skip: skip,
+      skip,
       take: pageSize,
     });
 
@@ -125,20 +161,20 @@ exports.updateRecord = async (req, res) => {
 };
 
 // 🔹 Delete Record (ADMIN)
-exports.deleteRecord = async (req, res) => {
+exports.deleteRecord = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    await prisma.record.delete({
+    await prisma.record.update({
       where: { id: parseInt(id) },
+      data: { isDeleted: true },
     });
 
     res.status(200).json({
-  success: true,
-  message: "Record deleted",
-});
+      success: true,
+      message: "Record deleted (soft delete)",
+    });
   } catch (error) {
-    res.status(500).json({ success:false,
-      error: error.message });
+    next(error);
   }
 };

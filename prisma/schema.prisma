@@ -29,6 +29,8 @@ model Record {
   userId    Int
   createdAt DateTime @default(now())
 
+  isDeleted Boolean  @default(false)  
+
   user      User     @relation(fields: [userId], references: [id])
 }
 

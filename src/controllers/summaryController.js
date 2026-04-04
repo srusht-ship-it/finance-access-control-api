@@ -5,7 +5,7 @@ exports.getTotalIncome = async (req, res) => {
   try {
     const result = await prisma.record.aggregate({
       _sum: { amount: true },
-      where: { type: "INCOME" },
+      where: { type: "INCOME" , isDeleted:false},
     });
 
     res.status(200).json({
@@ -120,6 +120,10 @@ exports.getMonthlyTrends = async (req, res) => {
 exports.getRecentActivity = async (req, res) => {
   try {
     const records = await prisma.record.findMany({
+      where:{
+        isDeleted:false,
+        userId:req.user.userId
+      },
       take: 5,
       orderBy: { date: "desc" },
       select: {
@@ -141,5 +145,24 @@ exports.getRecentActivity = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+exports.restoreRecord = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const record = await prisma.record.update({
+      where: { id: parseInt(id) },
+      data: { isDeleted: false },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Record restored",
+      data: record,
+    });
+  } catch (error) {
+    next(error);
   }
 };
