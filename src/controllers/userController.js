@@ -1,8 +1,7 @@
 const prisma = require("../config/db");
 const AppError = require("../utils/AppError");
 
-// 🔹 Get All Users (ADMIN only)
-// 🔹 Get All Users (ADMIN only)
+
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
@@ -25,8 +24,7 @@ exports.getAllUsers = async (req, res, next) => {
   }
 };
 
-// 🔹 Get Single User
-// 🔹 Get Single User
+
 exports.getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -60,7 +58,7 @@ exports.getUserById = async (req, res, next) => {
 };
 
 
-// 🔹 Update User Role (ADMIN only)
+// Update User Role 
 exports.updateUserRole = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -98,7 +96,7 @@ exports.updateUserRole = async (req, res, next) => {
   }
 };
 
-// 🔹 Activate / Deactivate User (ADMIN only)
+// Activate / Deactivate User 
 exports.toggleUserStatus = async (req, res) => {
   try {
     const { id } = req.params;

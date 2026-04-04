@@ -1,6 +1,6 @@
 const prisma = require("../config/db");
 
-// 🔹 Total Income
+//  Total Income
 exports.getTotalIncome = async (req, res) => {
   try {
     const result = await prisma.record.aggregate({
@@ -18,7 +18,7 @@ exports.getTotalIncome = async (req, res) => {
   }
 };
 
-// 🔹 Total Expense
+//  Total Expense
 exports.getTotalExpense = async (req, res) => {
   try {
     const result = await prisma.record.aggregate({
@@ -36,7 +36,7 @@ exports.getTotalExpense = async (req, res) => {
   }
 };
 
-// 🔹 Net Balance
+//  Net Balance
 exports.getNetBalance = async (req, res) => {
   try {
     const income = await prisma.record.aggregate({
@@ -61,7 +61,7 @@ exports.getNetBalance = async (req, res) => {
   }
 };
 
-// 🔹 Category-wise totals
+//Category-wise totals
 exports.getCategoryWise = async (req, res) => {
   try {
     const data = await prisma.record.groupBy({
@@ -79,7 +79,7 @@ exports.getCategoryWise = async (req, res) => {
   }
 };
 
-// 🔹 Monthly Trends
+// Monthly Trends
 exports.getMonthlyTrends = async (req, res) => {
   try {
     const data = await prisma.record.findMany({
@@ -116,7 +116,7 @@ exports.getMonthlyTrends = async (req, res) => {
   }
 };
 
-// 🔹 Recent Activity (last 5 records)
+// Recent Activity
 exports.getRecentActivity = async (req, res) => {
   try {
     const records = await prisma.record.findMany({

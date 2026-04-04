@@ -1,7 +1,7 @@
 const prisma = require("../config/db");
 const AppError = require("../utils/AppError");
 
-// 🔹 Create Record 
+//Create Record 
 exports.createRecord = async (req, res) => {
   try {
     const { amount, type, category, date, notes } = req.body;
@@ -45,7 +45,7 @@ if (isNaN(Date.parse(date))) {
 };
 
 
-// 🔹 Get Records with Pagination (ANALYST + ADMIN)
+//Get Records 
 exports.getRecords = async (req, res, next) => {
   try {
     const {
@@ -138,7 +138,7 @@ exports.getRecords = async (req, res, next) => {
   }
 };
 
-// 🔹 Update Record (ADMIN)
+// Update Record 
 exports.updateRecord = async (req, res) => {
   try {
     const { id } = req.params;
@@ -160,7 +160,7 @@ exports.updateRecord = async (req, res) => {
   }
 };
 
-// 🔹 Delete Record (ADMIN)
+// Delete Record 
 exports.deleteRecord = async (req, res, next) => {
   try {
     const { id } = req.params;
