@@ -49,5 +49,4 @@ const errorHandler = require("./middleware/errorMiddleware");
 
 app.use(errorHandler);
 
-const rateLimit = require("express-rate-limit");
 
