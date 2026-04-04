@@ -23,7 +23,7 @@ exports.getTotalExpense = async (req, res) => {
   try {
     const result = await prisma.record.aggregate({
       _sum: { amount: true },
-      where: { type: "EXPENSE" },
+      where: { type: "EXPENSE",isDeleted:false },
     });
 
     res.status(200).json({
@@ -41,12 +41,12 @@ exports.getNetBalance = async (req, res) => {
   try {
     const income = await prisma.record.aggregate({
       _sum: { amount: true },
-      where: { type: "INCOME" },
+      where: { type: "INCOME" , isDeleted:false},
     });
 
     const expense = await prisma.record.aggregate({
       _sum: { amount: true },
-      where: { type: "EXPENSE" },
+      where: { type: "EXPENSE" , isDeleted:false},
     });
 
     const net = (income._sum.amount || 0) - (expense._sum.amount || 0);
@@ -67,6 +67,7 @@ exports.getCategoryWise = async (req, res) => {
     const data = await prisma.record.groupBy({
       by: ["category"],
       _sum: { amount: true },
+      where: {isDeleted:false}
     });
 
    res.status(200).json({
@@ -83,6 +84,7 @@ exports.getCategoryWise = async (req, res) => {
 exports.getMonthlyTrends = async (req, res) => {
   try {
     const data = await prisma.record.findMany({
+      where:{isDeleted:false},
       select: {
         amount: true,
         date: true,

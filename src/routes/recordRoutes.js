@@ -8,7 +8,7 @@ const roleMiddleware = require("../middleware/roleMiddleware");
 
 router.post("/", authMiddleware, roleMiddleware("ADMIN"), recordController.createRecord);
 
-router.get("/", authMiddleware, recordController.getRecords);
+router.get("/", authMiddleware, roleMiddleware(["ADMIN", "ANALYST"]), recordController.getRecords);
 
 router.put("/:id", authMiddleware, roleMiddleware("ADMIN"), recordController.updateRecord);
 

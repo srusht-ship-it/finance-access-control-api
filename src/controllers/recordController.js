@@ -82,6 +82,7 @@ exports.getRecords = async (req, res, next) => {
 
     
     const filters = {
+      userId: req.user.userId,
       isDeleted:false,
       ...(type && { type }),
       ...(category && { category }),
@@ -142,29 +143,62 @@ exports.getRecords = async (req, res, next) => {
 exports.updateRecord = async (req, res) => {
   try {
     const { id } = req.params;
-    const data = req.body;
+
+    // Find record
+    const record = await prisma.record.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    // Ownership check
+    if (!record || record.userId !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed",
+      });
+    }
+
+    // Update (with date fix)
+    const { date, ...rest } = req.body;
 
     const updated = await prisma.record.update({
       where: { id: parseInt(id) },
-      data,
+      data: {
+        ...rest,
+        ...(date && { date: new Date(date) }),
+      },
     });
 
-   res.status(200).json({
-  success: true,
-  message: "Record updated",
-  data: updated,
-});
+    res.status(200).json({
+      success: true,
+      message: "Record updated",
+      data: updated,
+    });
   } catch (error) {
-    res.status(500).json({ success:false,
-      error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
   }
 };
-
 // Delete Record 
 exports.deleteRecord = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Find record
+    const record = await prisma.record.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    //  Ownership check
+    if (!record || record.userId !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Not allowed",
+      });
+    }
+
+    // Soft delete
     await prisma.record.update({
       where: { id: parseInt(id) },
       data: { isDeleted: true },
